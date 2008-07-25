@@ -1,25 +1,73 @@
-from gui import Paintable, Updateable
+from random import randint
+from types import FunctionType
+
 from pygame import draw, Rect
 from pygame.constants import *
-from behaviors import *
-from sets import Set
-from random import randint
+
 from common import RESOLUTION
+from gui import Paintable, Updateable
+
+class Genotype(object):
+    def __init__(self, health, dimensions, color, growthFactor):
+        self.__health = health
+        self.__dimensions = dimensions
+        self.__color = color
+        self.__growthFactor = growthFactor
+
+    def getHealth(self):
+        if isinstance(self.__health, FunctionType):
+            return self.__health()
+        else:
+            return self.__health
+    
+    def getDimensions(self):
+        if isinstance(self.__dimensions, FunctionType):
+            return self.__dimensions()
+        else:
+            return self.__dimensions
+    
+    def getColor(self):
+        if isinstance(self.__color, FunctionType):
+            return self.__color()
+        else:
+            return self.__color
+    
+    def getGrowthFactor(self):
+        if isinstance(self.__growthFactor, FunctionType):
+            return self.__growthFactor()
+        else:
+            return self.__growthFactor
+    
+    health       = property(getHealth)
+    dimensions   = property(getDimensions)
+    color        = property(getColor)
+    growthFactor = property(getGrowthFactor)
+
+class Personality(object):
+    def __init__(self, behavior_list):
+        self.behaviors = behavior_list
+    
+    def __iter__(self):
+        for behavior in self.behaviors:
+            yield behavior
 
 class Entity(Paintable, Updateable):
     entityBehaviors = {}
 
     def __init__(self, world, family = None, position = None):
         if position == None:
-            offset = (int(RESOLUTION[0]/5), int(RESOLUTION[1]/5))
-#            position = (randint(offset[0], RESOLUTION[0] - offset[0]), randint(offset[1], RESOLUTION[1] - offset[1]))
-            position = map(lambda offset, resolution: randint(offset, resolution - offset), offset, RESOLUTION)
+            offsets = (int(dimension/5.0) for dimension in RESOLUTION)
+
+            position = tuple(randint(offset, dimension - offset) 
+                             for offset, dimension 
+                             in zip(offsets, RESOLUTION))
     
         Paintable.__init__(self, position)
-        self.boundingBox = Rect(position, self.getInitialDimensions())
+        self.boundingBox = Rect(position, self.attributes.dimensions)
+        
         self.age = 0
-        self.health = self.getAttribute('health')
-        self.growthFactor = self.getAttribute('growthFactor')
+        self.health = self.attributes.health
+        self.growthFactor = self.attributes.growthFactor
         self.carriedEntity = None
         self.beingCarried = False
 
@@ -34,20 +82,6 @@ class Entity(Paintable, Updateable):
 #        self.behavior = ComplexBehavior(self, world)
         world.register(self)
 
-    def __del__(self):
-#        print 'Destructing ', self
-        
-        for base in self.__class__.__bases__:
-            # Avoid problems with diamond inheritance.
-            basekey = 'del_' + str(base)
-            if not hasattr(self, basekey):
-                setattr(self, basekey, 1)
-            else:
-                continue
-            # Call this base class' destructor if it has one.
-            if hasattr(base, "__del__"):
-                base.__del__(self)
-
     def getId(self):
         return self.getSpecies()
         
@@ -57,17 +91,11 @@ class Entity(Paintable, Updateable):
     def getFamily(self):
         return self.family
     
-    def getBoundingBox(self):
-        return self.boundingBox
-
     def getDimensions(self):
         return [self.boundingBox.w, self.boundingBox.h]
 
     def getPosition(self):
         return self.boundingBox.center
-        
-    def getCarriedEntity(self):
-        return self.carriedEntity
         
     def isCarryingEntity(self, type = None):
         if type:
@@ -75,48 +103,18 @@ class Entity(Paintable, Updateable):
         else:
             return self.carriedEntity != None
     
-    def isCarried(self):
-        return self.beingCarried
-
-    def getAttribute(self, attributeName):
-        attribute = self.__class__.attributes[attributeName]
-        if attribute.__class__.__name__ == 'function':
-            return attribute()
-        else:
-            return attribute
-
-    def getInitialHealth(self):
-        return self.getAttribute('health')
-
-    def getInitialDimensions(self):
-        return self.getAttribute('dimensions')
-    
-    def getColor(self):
-        return self.getAttribute('color')
-
-    def getGrowthFactor(self):
-        return self.growthFactor
-
-    def getHealth(self):
-        return self.health
-        
-    def getAge(self):
-        return self.age
-
     def paint(self, screen):
-        draw.rect(screen, self.getColor(), self.boundingBox)
+        draw.rect(screen, self.attributes.color, self.boundingBox)
         
     def update(self, delay, world):
         if self.__class__.entityBehaviors:
-            for behavior, params in self.__class__.entityBehaviors.iteritems():
-                extraParams = [self, world]
-                extraParams.extend(params)
-                behavior.do(extraParams)
+            for behavior in self.__class__.entityBehaviors:
+                behavior.do(self, world)
                 
         self.age += 1
         
     def grow(self, growthArea):
-        growthFactor = self.getGrowthFactor()
+        growthFactor = self.growthFactor
         self.boundingBox.inflate_ip(growthArea[0] * growthFactor, growthArea[1] * growthFactor)
         gain = growthArea[0]  * growthArea[1]
 #        print 'Gained %s health' % gain
@@ -227,7 +225,7 @@ class Family(Entity):
     def update(self, delay, world):
         def findEdges(currentEdges, member):
             left, top, right, bottom = currentEdges
-            box = member.getBoundingBox()
+            box = member.boundingBox
             currentEdges = [min(left, box.left), min(top, box.top), max(right, box.right), max(bottom, box.bottom)]
             
             try:
@@ -259,15 +257,6 @@ class Hunter(Entity):
         Entity.__init__(self, world, family, position)
 #        self.behavior.add(StartNewFamily(self, world))
         
-    def getInitialHealth(self):
-        return 1000
-
-    def getInitialDimensions(self):
-        return (3,3)
-    
-    def getColor(self):
-        return (200, 0, 0)
-
 class FoodFamily(Family):
     def paint(self, screen):
         pass
@@ -280,7 +269,7 @@ class Food(Entity):
         if position == None:
             position = (randint(100,540), randint(100,380))
 
-        self.boundingBox = Rect(position, self.getInitialDimensions())
+        self.boundingBox = Rect(position, self.attributes.dimensions)
         if not family:
             family = FoodFamily(world)
         Entity.__init__(self, world, family, position)
@@ -289,67 +278,11 @@ class Food(Entity):
         dimensions = self.getDimensions()
         eater.grow(dimensions)
         self.grow(map(lambda x: -1*x, dimensions))
-        self.health -= 100*eater.getGrowthFactor()
-
-
-
-Drone.entityBehaviors = {EntityBehavior(RandomMove)   : [],                                     \
-                       EntityBehavior(ApproachFamily) : [0.50, 50, False, [Queen]],             \
-                       EntityBehavior(Mutate)         : [1.00, {Hunter: .001, Queen: .0005}],   \
-                       EntityBehavior(Decay)          : [1.00, 80],                             \
-                       EntityBehavior(StartNewFamily) : [0.01],                                 \
-                       EntityBehavior(Eat)            : [.50],                                  \
-                       EntityBehavior(Gather)         : [.50, 100, [Food]]                      \
-                       }
-
-Drone.attributes = {'health'         : lambda:randint(200,400),                                 \
-                    'dimensions'    : (5, 5),                                                   \
-                    'color'         : (0, 0, 200),                                              \
-                    'growthFactor'  : 0.25                                                      \
-                    }
-
-Queen.entityBehaviors = {EntityBehavior(RandomMove)   : [],                                     \
-                       EntityBehavior(ApproachFamily) : [0.50, 200, False, [Drone]],            \
-                       EntityBehavior(Mate)           : [0.10],                                 \
-                       EntityBehavior(Decay)          : [1.00, 125],                            \
-                       EntityBehavior(Absorb)         : [1.00, [Queen]],                        \
-                       EntityBehavior(StartNewFamily) : [0.01]                                  \
-                       }
-
-Queen.attributes = {'health'        : lambda:randint(500,1000),                                 \
-                    'dimensions'    : lambda:[randint(6,10)]*2,                                 \
-                    'color'         : (0, 200, 0),                                              \
-                    'growthFactor'  : 0.25                                                      \
-                    }
-
-Hunter.entityBehaviors = {EntityBehavior(Absorb)      : [],                                     \
-                       EntityBehavior(ApproachFamily) : [0.75, 50, False],                      \
-                       EntityBehavior(Mutate)         : [1.00, {Queen: .0005}],                 \
-                       EntityBehavior(Explode)        : [1.00, 20],                             \
-                       EntityBehavior(StartNewFamily) : [0.01]                                  \
-                       }
-
-Hunter.attributes = {'health'        : lambda:randint(500,1000),                                \
-                    'dimensions'    : (3,3),                                                    \
-                    'color'         : (200, 0, 0),                                              \
-                    'growthFactor'  : 0.25                                                      \
-                    }
-
-Food.entityBehaviors = {EntityBehavior(Multiply)      : [0.005, 3, 5],                          \
-                        EntityBehavior(Decay)          : [1.00, 1000],                           \
-                        }
-
-Food.attributes = {'health'        : lambda:randint(100,300),                                   \
-                   'dimensions'    : lambda:[randint(2,10)]*2,                     \
-                   'color'         : (133, 88, 10),                                             \
-                   'growthFactor'  : 0.25                                                       \
-                    }
+        self.health -= 100*eater.growthFactor
 
 
 
 
 
-def familyHasQueen(family):
-    return False
-    return family.memberCount(Queen) > 0
+
 

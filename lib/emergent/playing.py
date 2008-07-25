@@ -1,11 +1,14 @@
+from random import randint
+
 import pygame
 from pygame import event
 from pygame.event import Event
+
 from states import GuiState
 from gui import Paintable, Updateable
-from random import randint
-from entities import Drone, Queen, Hunter, Family, Food
 from common import randomizePosition
+from entities import Drone, Queen, Hunter, Family, Food
+import definition
 
 class PlayingGameState(GuiState):
  
@@ -120,7 +123,7 @@ class World(Paintable, Updateable):
     def checkNeighbors(self, entity, senseBox):
         neighbors = []  
         for e in self.entities:
-            if e.__class__ != Family and e != entity and senseBox.colliderect(e.getBoundingBox()):
+            if e.__class__ != Family and e != entity and senseBox.colliderect(e.boundingBox):
                 neighbors.append(e)
 
         return neighbors

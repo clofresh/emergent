@@ -1,11 +1,13 @@
-import pygame
 import sys
-import gui # So we can have a common interface between gui stuff and state stuff
-from  common import SubclassShouldImplement, THREAD_LIMIT, FPS
-from pygame.locals import *
 from Queue import Queue, Empty
 from threading import Thread
 from time import clock 
+
+import pygame
+from pygame.locals import *
+
+import gui 
+from common import SubclassShouldImplement, THREAD_LIMIT, FPS
  
 class StateDriver:
     def __init__(self,screen):

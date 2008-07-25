@@ -1,5 +1,5 @@
 #!/usr/bin/env python
- 
+
 import pygame
 from pygame.constants import DOUBLEBUF
 
@@ -15,6 +15,7 @@ def main():
     driver = StateDriver(screen)
     driver.start(PlayingGameState())
     driver.run()
+
 
 if __name__ == '__main__':
     main()
