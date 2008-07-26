@@ -7,8 +7,8 @@ setup(
     author='Carlo Cabanilla',
     author_email='carlo.cabanilla@gmail.com',
     url='http://syntacticbayleaves.com',
-    package_dir={'emergent': 'lib/emergent'},
     packages=['emergent'],
-    scripts=['bin/emergent']
+    scripts=['bin/emergent'],
+    test_suite='nose.collector',
 )
 

@@ -8,7 +8,7 @@ from common import RESOLUTION
 from gui import Paintable, Updateable
 
 class Genotype(object):
-    def __init__(self, health, dimensions, color, growthFactor):
+    def __init__(self, health=1, dimensions=(1,1), color=(0,0,0), growthFactor=0.0):
         self.__health = health
         self.__dimensions = dimensions
         self.__color = color
@@ -44,7 +44,7 @@ class Genotype(object):
     growthFactor = property(getGrowthFactor)
 
 class Personality(object):
-    def __init__(self, behavior_list):
+    def __init__(self, behavior_list=[]):
         self.behaviors = behavior_list
     
     def __iter__(self):
@@ -52,7 +52,8 @@ class Personality(object):
             yield behavior
 
 class Entity(Paintable, Updateable):
-    entityBehaviors = {}
+    entityBehaviors = Personality()
+    attributes = Genotype()
 
     def __init__(self, world, family = None, position = None):
         if position == None:
@@ -130,8 +131,7 @@ class Entity(Paintable, Updateable):
             self.carriedEntity = None
 
     def hasBehavior(self, behavior):
-#        return self.behavior.hasBehavior(behavior)
-        pass
+        return self.behavior in behavior
     
     def addBehavior(self, behavior):
 #        self.behavior.add(behavior)

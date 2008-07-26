@@ -10,7 +10,7 @@ import entities
 
 
 class Behavior(object):
-    def __init__(self, chanceOfAction = 1.00):
+    def __init__(self, chanceOfAction=1.00):
         self.chanceOfAction = chanceOfAction
 
     def getChanceOfAction(self):
@@ -24,56 +24,46 @@ class Behavior(object):
         return self.getChanceOfAction() > random()
 
     def do(self, doer, world):
-        raise SubclassShouldImplement
+        raise NotImplementedError()
+    
+    def __eq__(self, other):
+        return self.__class__ is other.__class__
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 class ComplexBehavior(Behavior):
-    def __init__(self, chanceOfAction = 1.00):
+    def __init__(self, chanceOfAction=1.00):
         Behavior.__init__(self, chanceOfAction)
         self.behaviors = []
         
     def add(self, toAdd):
         self.remove(toAdd)
         self.behaviors.append(toAdd)
-
         
     def remove(self, toRemove):
         try:
-            self.behaviors.remove(toAdd)
-        except:
+            self.behaviors.remove(toRemove)
+        except ValueError:
             pass
-        
-    def hasBehavior(self, behavior):
-        def getBehaviorClass(b):
-            return b.__class__.__name__
-        behaviorClasses = map(getBehaviorClass, self.behaviors)
-        
-        if type(behavior).__name__ == 'classobj':
-            behavior = behavior.__name__
-        
-        return behavior in behaviorClasses
-        
-    def removeBehavior(self, behavior):
-        if type(behavior).__name__ == 'classobj':
-            behavior = behavior.__name__
 
-        def filterBehaviors(b):
-            return b.__class__.__name__ != behavior
-                
-        self.behaviors = filter(filterBehaviors, self.behaviors)       
-        
+    def __iter__(self):
+        for b in self.behaviors:
+            yield b
+    
     def do(self, doer, world):
         for b in self.behaviors:
             b.do(doer, world)
-        
+    
 
 class Move(Behavior):
-    def __init__(self, chanceOfAction = 1.00, displacement = (0, 0)):
+    def __init__(self, chanceOfAction=1.00, displacement=(0, 0)):
         Behavior.__init__(self, chanceOfAction)
         self.displacement = displacement
         
     def do(self, doer, world):
         box = doer.boundingBox
-        newBox = box.move(self.displacement[0], self.displacement[1])
+        newBox = box.move(*self.displacement)
         doer.boundingBox = Rect(newBox.left%RESOLUTION[0], newBox.top%RESOLUTION[1], newBox.w, newBox.h)
 
         carriedEntity = doer.carriedEntity
@@ -102,11 +92,10 @@ class Sense(Behavior):
         if senseDistance:
             self.senseDistance = senseDistance
         else:
-#            self.senseDistance = self.doer.getDimensions()[0] + 1 # PROBLEM
-            self.senseDistance = 1 # PROBLEM
+            self.senseDistance = 1
 
     def updateSenseDistance(self, doer, world):
-        pass
+        self.senseDistance = doer.getDimensions()[0] + 1
     
     def senseAction(self, doer, world, inRange):
         pass
@@ -356,9 +345,8 @@ class Pop(Sense):
         Sense.__init__(self, chanceOfAction, 10)
     
     def senseAction(self, doer, world, inRange):
-        def entityExplodes(e): return e.hasBehavior(Explode)
-        
-        explodables = filter(entityExplodes, inRange)
+        explodables = [entity for entity in inRange 
+                        if entity.hasBehavior(Explode)]
 
         if explodables:
             toPop = explodables[0]
