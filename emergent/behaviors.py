@@ -32,6 +32,8 @@ class Behavior(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+
+
 class ComplexBehavior(Behavior):
     def __init__(self, chanceOfAction=1.00):
         Behavior.__init__(self, chanceOfAction)
@@ -56,6 +58,7 @@ class ComplexBehavior(Behavior):
             b.do(doer, world)
     
 
+
 class Move(Behavior):
     def __init__(self, chanceOfAction=1.00, displacement=(0, 0)):
         Behavior.__init__(self, chanceOfAction)
@@ -72,10 +75,10 @@ class Move(Behavior):
             newCarriedEntityBox = carriedEntityBox.move(self.displacement[0], self.displacement[1])
             doer.carriedEntity.boundingBox = Rect(newCarriedEntityBox.left%RESOLUTION[0], newCarriedEntityBox.top%RESOLUTION[1], newCarriedEntityBox.w, newCarriedEntityBox.h)
         
-        
-        
+                
+                
 class RandomMove(Move):
-    def __init__(self, chanceOfAction = 1.00):
+    def __init__(self, chanceOfAction=1.00):
         Move.__init__(self, chanceOfAction)
 
     def do(self, doer, world):
@@ -86,23 +89,19 @@ class RandomMove(Move):
         self.displacement = (dx, dy)
         return Move.do(self, doer, world)
 
-class Sense(Behavior):
-    def __init__(self, chanceOfAction = 1.00, senseDistance = None):
-        Behavior.__init__(self, chanceOfAction)
-        if senseDistance:
-            self.senseDistance = senseDistance
-        else:
-            self.senseDistance = 1
 
-    def updateSenseDistance(self, doer, world):
-        self.senseDistance = doer.getDimensions()[0] + 1
-    
+
+class Sense(Behavior):
+    def __init__(self, chanceOfAction=1.00, senseDistance=None):
+        Behavior.__init__(self, chanceOfAction)
+        self.senseDistance = senseDistance
+
     def senseAction(self, doer, world, inRange):
-        pass
+        ''' senseAction is called when other entities are within senseDistance
+        '''
 
     def othersInRange(self, doer, world):
-        self.updateSenseDistance(doer, world)
-        senseBox = doer.boundingBox.inflate(self.senseDistance, self.senseDistance)
+        senseBox = doer.boundingBox.inflate(2*self.senseDistance, 2*self.senseDistance)
         return world.checkNeighbors(doer, senseBox)
 
     def filterTargets(self, possibleTargets, targetEntities):
@@ -112,44 +111,51 @@ class Sense(Behavior):
             possibleTargets = filter(filterEntities, possibleTargets)
         return possibleTargets
         
-
-    def doToWithinRange(self, doer, world, func=None):
-        if func is None:
-            func = self.senseAction
-            
+    def doToWithinRange(self, doer, world):
         inRange = self.othersInRange(doer, world)
-        if inRange and self.shouldExecuteBehavior():
-            func(doer, world, inRange)
-            return True
-        else:
-            return False
+        didAct = inRange and self.shouldExecuteBehavior()
+        
+        if didAct:
+            self.senseAction(doer, world, inRange)
+
+        return didAct
 
     def do(self, doer, world):
+        if self.senseDistance is None:
+            self.senseDistance = doer.getDimensions()[0] + 1
+
         self.doToWithinRange(doer, world)
 
+
+
 class SenseFamilial(Sense):
-    def __init__(self, chanceOfAction = 1.00, senseDistance = None, senseFamily = True):
+    def __init__(self, chanceOfAction=1.00, senseDistance=None, senseFamily=True):
         Sense.__init__(self, chanceOfAction, senseDistance)
         self.senseFamily = senseFamily
 
     def othersInRange(self, doer, world):
-        def familial(e):
-            if self.senseFamily:
-                return e.getFamily() == doer.getFamily()
-            else:
-                return e.getFamily() != doer.getFamily()
-
         inRange = Sense.othersInRange(self, doer, world)
-        return filter(familial, inRange)
+
+        if self.senseFamily:
+            return [entity for entity 
+                    in inRange
+                    if doer.getFamily() == entity.getFamily()]
+        else:
+            return [entity for entity 
+                    in inRange
+                    if doer.getFamily() != entity.getFamily()]
+
 
         
 class Response(Move, Sense):
-    def __init__(self, chanceOfAction = 1.00, senseDistance = None):
+    def __init__(self, chanceOfAction=1.00, senseDistance=None):
         Move.__init__(self, chanceOfAction)
         Sense.__init__(self, chanceOfAction, senseDistance)
 
+
+
 class Approach(Response):
-    def __init__(self, chanceOfAction = 1.00, senseDistance = None, toApproach = []):
+    def __init__(self, chanceOfAction=1.00, senseDistance=None, toApproach=[]):
         Response.__init__(self, chanceOfAction, senseDistance)
         self.randomMove = RandomMove()
         self.toApproach = toApproach
@@ -159,23 +165,23 @@ class Approach(Response):
 
     def senseAction(self, doer, world, inSight):
         toApproach = inSight[0]
-#            print 'Found %s' % toApproach
         self.displacement = normalize(getDisplacement(doer.boundingBox, toApproach.boundingBox))
 
-        if self.displacement[0] == 0 and self.displacement[1] == 0:
-            self.randomMove.do(doer, world)
-        else:
-            self.displacement[0] = round(self.displacement[0] * 2)
-            self.displacement[1] = round(self.displacement[1] * 2)
-
+        if any(self.displacement):
+            self.displacement = [round(num * 2) for num in self.displacement]
             Move.do(self, doer, world)
+        else:
+            self.randomMove.do(doer, world)
 
     def do(self, doer, world):
-        if self.doToWithinRange(doer, world) == False:
+        approached = self.doToWithinRange(doer, world)
+        if not approached:
             self.randomMove.do(doer, world)
 
+
+
 class ApproachFamily(Approach, SenseFamilial):
-    def __init__(self, chanceOfAction = 1.00, senseDistance = None, senseFamily = True, toApproach = []):
+    def __init__(self, chanceOfAction=1.00, senseDistance=None, senseFamily=True, toApproach=[]):
         SenseFamilial.__init__(self, chanceOfAction, senseDistance, senseFamily)
         Approach.__init__(self, chanceOfAction, senseDistance, toApproach)
 
@@ -198,9 +204,6 @@ class Absorb(SenseFamilial):
         self.toAbsorb = toAbsorb
         self.chanceOfAction = .1
         
-    def updateSenseDistance(self, doer, world):
-        self.senseDistance = doer.getDimensions()[0] + 1
-
     def othersInRange(self, doer, world):
         return self.filterTargets(SenseFamilial.othersInRange(self, doer, world), self.toAbsorb)        
 
@@ -253,8 +256,8 @@ class Mate(SenseFamilial):
             babies = randint(1,5)
             birthingPlace = mate.getPosition()
             for i in xrange(babies):
-                entities.Drone(world, doer.getFamily(), birthingPlace)
-            doer.health = (float(doer.health) / 10.0) - 10
+                baby = entities.Drone(world, doer.getFamily(), birthingPlace)
+                doer.health -= baby.health / 2.0
             doer.removeBehavior(Approach)
 #            doer.getFamily().allyWith(mate.getFamily())
             print '%s gave birth %s Drones' % (doer, babies)
@@ -358,8 +361,8 @@ class StartNewFamily(SenseFamilial):
     def __init__(self, chanceOfAction = 0.00, senseDistance = None, senseFamily = True):
         SenseFamilial.__init__(self, 1.00 - chanceOfAction, senseDistance, senseFamily)
     
-    def doToWithinRange(self, doer, world, func = None):
-        if not SenseFamilial.doToWithinRange(self, doer, world, func):
+    def doToWithinRange(self, doer, world):
+        if not SenseFamilial.doToWithinRange(self, doer, world):
             fam = doer.getFamily()
             famBox = fam.boundingBox
             if doer.age > 50 and fam.getMemberCount() > 5 and getMagnitude(getDisplacement(doer.boundingBox, famBox)) >= fam.getTerritoryRadius() - 5:

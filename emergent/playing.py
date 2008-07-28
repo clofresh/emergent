@@ -16,20 +16,20 @@ class PlayingGameState(GuiState):
         GuiState.__init__(self)
 
         gameWorld = World()
-
+        definition.apply()
 
         variance = 50
 
-        for i in xrange(1):
+        for i in xrange(5):
             q = Drone(gameWorld)
             fam = q.getFamily()
             home = q.getPosition()
             f = Food(gameWorld, None, randomizePosition(home, 100))
             foodFam = f.getFamily()
-            for j in xrange(20):
+            for j in xrange(10):
                 Drone(gameWorld, fam, randomizePosition(home, 50))
                 
-            for j in xrange(30):
+            for j in xrange(15):
                 Food(gameWorld, foodFam, randomizePosition(home, 100))
                       
       
@@ -82,7 +82,7 @@ class World(Paintable, Updateable):
         del emptyFamilies
                 
         if not self.entities:
-            print 'Everyone\'s dead!'
+            print "Everyone's dead!"
             event.post(Event(pygame.QUIT, {}))
             
     def addToFamily(self, family, member):
@@ -123,7 +123,7 @@ class World(Paintable, Updateable):
     def checkNeighbors(self, entity, senseBox):
         neighbors = []  
         for e in self.entities:
-            if e.__class__ != Family and e != entity and senseBox.colliderect(e.boundingBox):
+            if e.__class__ is not Family and e is not entity and senseBox.colliderect(e.boundingBox):
                 neighbors.append(e)
 
         return neighbors

@@ -5,3 +5,4 @@ syntax: glob
 dist
 build
 *.egg-info
+coverage_dir

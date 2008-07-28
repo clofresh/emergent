@@ -1,5 +1,5 @@
 import emergent
-from mocker import Mocker, expect
+from mocker import Mocker, expect, ANY
 from pygame import Rect
 
 
@@ -108,8 +108,102 @@ def testRandomMove():
 
         assert randomMover.boundingBox == mover.boundingBox
     
+def testSense():
+    from emergent.behaviors import Sense
+    from emergent.entities import Entity, Genotype
+    from emergent.playing import World
 
-tests = [testBehavior, testComplexBehavior, testMove, testRandomMove]
+    entitySize = 10
+    class TestEntity(Entity): 
+        attributes = Genotype(dimensions=tuple([entitySize] * 2))
+
+    class SenseActionException(Exception):
+        ''' Make a fake exception so that we can catch it
+            to verify that the senseAction gets called
+        '''
+        
+    def dummySenseAction(doer, world, inRange):
+        raise SenseActionException()
+
+    startingPositions = [(0,0), 
+                         (entitySize * 2,0), 
+                         (0, entitySize * 2), 
+                         (entitySize * 3, 0)]
+    world = World()
+    sense = Sense(senseDistance=entitySize + 1)
+    sense.senseAction = dummySenseAction
+
+    entities = [TestEntity(world, position=startingPosition)
+                for startingPosition in startingPositions]
+
+    expectedInRange = entities[1:3]
+    actualInRange = sense.othersInRange(entities[0], world)
+
+    assert actualInRange == expectedInRange, 'expected inRange: %s, actual: %s' % (expectedInRange, actualInRange)
+    
+    
+    try:
+        sense.do(entities[0], world)
+        assert False, "Didn't call sense action"
+    except SenseActionException:
+        pass # Correct behavior
+    
+    sense = Sense(senseDistance=0)
+    try:
+        sense.do(entities[0], world)
+    except SenseActionException:
+        assert False, "Called sense action when no targets in range"
+
+
+
+def testSenseFamilial():
+    from emergent.behaviors import SenseFamilial
+    from emergent.entities import Entity, Family, Genotype
+    from emergent.playing import World
+
+    entitySize = 10
+    class TestEntity(Entity): 
+        attributes = Genotype(dimensions=tuple([entitySize] * 2))
+
+    class SenseActionException(Exception):
+        ''' Make a fake exception so that we can catch it
+            to verify that the senseAction gets called
+        '''
+        
+    def dummySenseAction(doer, world, inRange):
+        raise SenseActionException()
+
+    world = World()
+
+    familyCount = 2
+    startingPositions = [(0,0), 
+                         (entitySize * 2,0)]
+
+    families = [Family(world, 'Family %s' % i) 
+                for i in xrange(familyCount)]
+    entities = [TestEntity(world, family, startingPosition) 
+                for family, startingPosition 
+                in zip(families, startingPositions)]
+
+    senseDistance = entitySize + 1
+    senseFamilial = SenseFamilial(senseDistance=senseDistance,
+                                  senseFamily=True)
+    senseFamilial.senseAction = dummySenseAction
+    
+    assert senseFamilial.othersInRange(entities[0], world) == []
+    
+    senseNonfamilial = SenseFamilial(senseDistance=senseDistance,
+                                     senseFamily=False)
+    senseNonfamilial.senseAction = dummySenseAction
+    
+    assert senseNonfamilial.othersInRange(entities[0], world) == entities[1:2]
+    
+    
+    
+        
+    
+
+tests = [testBehavior, testComplexBehavior, testMove, testRandomMove, testSense, testSenseFamilial]
     
 
 if __name__ == '__main__':
