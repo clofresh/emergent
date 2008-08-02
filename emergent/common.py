@@ -4,8 +4,6 @@ from random import randint
 RESOLUTION = (640, 480)
 FPS = 60
 
-THREAD_LIMIT = 1
-
 class SubclassShouldImplement(Exception):
     def __init__(self, msg="A method was called which should have been overridden"):
 	Exception.__init__(self,msg)

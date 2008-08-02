@@ -7,7 +7,7 @@ import pygame
 from pygame.locals import *
 
 import gui 
-from common import SubclassShouldImplement, THREAD_LIMIT, FPS
+from common import SubclassShouldImplement, FPS
  
 class StateDriver:
     def __init__(self,screen):
@@ -103,8 +103,6 @@ class State(gui.Keyable,gui.Mouseable):
         pass
     
 class GuiState(State):
-    jobQueue = Queue()
-
     def __init__(self):
         State.__init__(self)
         self.paintables = []
@@ -151,78 +149,17 @@ class GuiState(State):
                 
 
     def paint(self,screen):
-        startTime = clock()
+        threads = []
+        for paintable in self.paintables:
+            t = Thread(target=paintable.paint, args=[screen])
+            t.start()
+            threads.append(t)
 
-        if THREAD_LIMIT == 1:
-            for paintable in self.paintables:
-                paintable.paint(screen)
-#            print 'Painted %s' % len(self.paintables)
-        else:
-            for paintable in self.paintables:
-                GuiState.jobQueue.put(paintable)
-    
-            paintingThreads = []
-            for n in xrange(THREAD_LIMIT):
-                pt = PaintingThread(screen)
-                pt.start()
-                paintingThreads.append(pt)
-    
-            
-            for pt in paintingThreads:
-                pt.join()
-        
-        endTime = clock()
-        
-#        print 'Painted in %s seconds' % (endTime - startTime)
-        
-        
-            
+        for t in threads:
+            t.join()
 
     def update(self,delay):
-        startTime = clock()
-
-        if THREAD_LIMIT == 1:
-            for updateable in self.updateables:
-                updateable.update(delay)
-#            print 'Updated %s' % len(self.updateables)
-        else:
-            for updateable in self.updateables:
-                GuiState.jobQueue.put(updateable)
-    
-            updatingThreads = []
-            for n in xrange(THREAD_LIMIT):
-                ut = UpdatingThread(delay)
-                ut.start()
-                updatingThreads.append(ut)
-    
-            
-            for ut in updatingThreads:
-                ut.join()
-
-        endTime = clock()
-        
-#        print 'Updated in %s seconds' % (endTime - startTime)
+        for updateable in self.updateables:
+            updateable.update(delay)
 
             
-class PaintingThread(Thread):
-    def __init__(self, screen):
-        Thread.__init__(self)
-        self.screen = screen
-        
-    def run(self):
-        while GuiState.jobQueue.empty() == False:
-            GuiState.jobQueue.get(False).paint(self.screen)
-            
-            
-class UpdatingThread(Thread):
-    def __init__(self, delay):
-        Thread.__init__(self)
-        self.delay = delay
-        
-    def run(self):
-        try:
-            while GuiState.jobQueue.empty() == False:
-                GuiState.jobQueue.get(False).update(self.delay)
-        except Empty:
-            pass
-
