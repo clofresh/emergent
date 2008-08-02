@@ -11,6 +11,7 @@ from entities import Drone, Queen, Hunter, Family, Food
 import definition
 
 class PlayingGameState(GuiState):
+    familes = 5
  
     def __init__(self):
         GuiState.__init__(self)
@@ -18,9 +19,7 @@ class PlayingGameState(GuiState):
         gameWorld = World()
         definition.apply()
 
-        variance = 50
-
-        for i in xrange(5):
+        for i in xrange(self.familes):
             q = Drone(gameWorld)
             fam = q.getFamily()
             home = q.getPosition()
@@ -32,21 +31,8 @@ class PlayingGameState(GuiState):
             for j in xrange(15):
                 Food(gameWorld, foodFam, randomizePosition(home, 100))
                       
-      
-
-#        for i in xrange(20):
-#            Drone(gameWorld)
-#            Food(gameWorld)      
-            
-#        foodFam = f.getFamily()
-#        for i in xrange(10):
-#            Food(gameWorld, foodFam)
-
-
         self.add(gameWorld)
 
-
-        
 
 
 class World(Paintable, Updateable):
