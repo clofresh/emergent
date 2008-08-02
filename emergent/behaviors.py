@@ -139,11 +139,11 @@ class SenseFamilial(Sense):
         if self.senseFamily:
             return [entity for entity 
                     in inRange
-                    if doer.getFamily() == entity.getFamily()]
+                    if doer.getFamily() is entity.getFamily()]
         else:
             return [entity for entity 
                     in inRange
-                    if doer.getFamily() != entity.getFamily()]
+                    if doer.getFamily() is not entity.getFamily()]
 
 
         

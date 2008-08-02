@@ -83,9 +83,6 @@ class Entity(Paintable, Updateable):
 #        self.behavior = ComplexBehavior(self, world)
         world.register(self)
 
-    def getId(self):
-        return self.getSpecies()
-        
     def getSpecies(self):
         return self.__class__.__name__
         
@@ -145,10 +142,7 @@ class Entity(Paintable, Updateable):
         return '%s (%s, %s)' % (self.__class__.__name__, self.boundingBox.x, self.boundingBox.y)
 
 class Family(Entity):
-    nextId = 0
-
     def __init__(self, world, name = 'Family'):
-        self.id = self.getNextId()
         self.memberCount = {}
         self.boundingBox = None
 #        world.register(self)
@@ -156,18 +150,11 @@ class Family(Entity):
     def getFamily(self):
         return self
 
-    def getNextId(self):
-        Family.nextId += 1
-        return Family.nextId
-    
-    def getId(self):
-        return self.__class__.__name__ + str(self.id)
-    
     def __cmp__(self, other):
-        return cmp(self.getId(), other.getId())
+        return cmp(id(self), id(other))
 
     def __hash__(self):
-        return self.id
+        return id(self)
             
     def getTerritoryRadius(self):
         return max(self.boundingBox.w, self.boundingBox.h)/2
