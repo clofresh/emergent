@@ -1,7 +1,7 @@
 from math import sqrt
 from random import randint
 
-RESOLUTION = (800, 600)
+RESOLUTION = (640, 480)
 FPS = 60
 
 THREAD_LIMIT = 1
