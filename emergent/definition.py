@@ -12,16 +12,16 @@ def apply():
                                 ),
                                 
                                 ApproachFamily(
-                                    chanceOfAction=0.5,
-                                    senseDistance=50,
+                                    chanceOfAction=0.75,
+                                    senseDistance=100,
                                     senseFamily=False,
                                     toApproach=[Queen]
                                 ),
                                 
                                 Mutate(
                                     chanceOfAction=1.0,
-                                    mutationProbabilities={Hunter: 0.001, 
-                                                           Queen: 0.001}
+                                    mutationProbabilities={Hunter: 0.0005, 
+                                                           Queen: 0.0025}
                                 ),
                                 
                                 Decay(
@@ -59,7 +59,7 @@ def apply():
                                 ),
                                 
                                 ApproachFamily(
-                                  chanceOfAction=0.5,
+                                  chanceOfAction=0.75,
                                   senseDistance=200,
                                   senseFamily=False,
                                   toApproach=[Drone],
@@ -93,7 +93,7 @@ def apply():
     
     Hunter.entityBehaviors = Personality([
                                 Absorb(
-                                  chanceOfAction=0.05
+                                  chanceOfAction=0.025
                                 ),
                                 
                                 ApproachFamily(
@@ -109,7 +109,7 @@ def apply():
                                 
                                 Explode(
                                   chanceOfAction=1.0,
-                                  halfLife=20
+                                  halfLife=2
                                 ),
                                 
                                 StartNewFamily(
@@ -118,27 +118,27 @@ def apply():
                             ])
     
     Hunter.attributes = Genotype(
-                            health=lambda:randint(500,1000),
+                            health=lambda:randint(200,300),
                             dimensions=(3,3),
                             color=(200, 0, 0),
-                            growthFactor=0.125
+                            growthFactor=0.175
                         )
     
     Food.entityBehaviors = Personality([
                                 Multiply(
-                                  chanceOfAction=0.0010,
-                                  maxOffspring=3,
-                                  maxDistance=5
+                                  chanceOfAction=0.001,
+                                  maxOffspring=10,
+                                  maxDistance=25
                                 ),
                                 
                                 Decay(
-                                  chanceOfAction=1.00,
-                                  halfLife=1000
+                                  chanceOfAction=1,
+                                  halfLife=500
                                 )
                             ])
                             
     Food.attributes = Genotype(
-                            health=lambda:randint(50,100),
+                            health=lambda:randint(200,400),
                             dimensions=lambda:[randint(2,10)]*2,
                             color=(133, 88, 10),
                             growthFactor=0.25
