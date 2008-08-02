@@ -339,7 +339,8 @@ class Explode(Decay):
         if offspringCount > 1:
             for i in xrange(offspringCount):
                 entities.Drone(world, doer.getFamily(), origin)
-        
+
+        print '%s exploded into %s offspring' % (doer.getSpecies(), offspringCount)
         Decay.die(self, doer, world)
         
     
