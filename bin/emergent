@@ -18,4 +18,17 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    from optparse import OptionParser, Option
+    
+    options = [Option('--profile', action='store', dest='profile', default=None)]
+    optparser = OptionParser(option_list=options)
+    optionValues, args = optparser.parse_args()
+    
+    if optionValues.profile:
+        from cProfile import Profile
+        print 'Writing profiling data to %s' % optionValues.profile
+        profiler = Profile()
+        profiler.run('main()')
+        profiler.dump_stats(optionValues.profile)
+    else:
+        main()
