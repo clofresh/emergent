@@ -82,7 +82,7 @@ class RandomMove(Move):
         Move.__init__(self, chanceOfAction)
 
     def do(self, doer, world):
-        stride = round(doer.getDimensions()[0] / 2)
+        stride = doer.getStride()
     
         dx = randint(-1 * stride, stride)
         dy = randint(-1 * stride, stride)
@@ -106,9 +106,8 @@ class Sense(Behavior):
 
     def filterTargets(self, possibleTargets, targetEntities):
         if possibleTargets and targetEntities:    
-            def filterEntities(e):
-                return e.__class__ in targetEntities
-            possibleTargets = filter(filterEntities, possibleTargets)
+            possibleTargets = [e for e in possibleTargets
+                              if e.__class__ in targetEntities]
         return possibleTargets
         
     def doToWithinRange(self, doer, world):
@@ -168,7 +167,8 @@ class Approach(Response):
         self.displacement = normalize(getDisplacement(doer.boundingBox, toApproach.boundingBox))
 
         if any(self.displacement):
-            self.displacement = [round(num * 2) for num in self.displacement]
+            self.displacement = [round(num * 2) 
+                                for num in self.displacement]
             Move.do(self, doer, world)
         else:
             self.randomMove.do(doer, world)
@@ -334,7 +334,7 @@ class Explode(Decay):
         origin = doer.getPosition()
         dimensions = doer.getDimensions()
         area = dimensions[0] * dimensions[1]
-        offspringCount = int(round(float(area) / 128.0))
+        offspringCount = int(round(float(area)/10.))
 
         if offspringCount > 1:
             for i in xrange(offspringCount):

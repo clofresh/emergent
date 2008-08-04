@@ -45,7 +45,7 @@ class Genotype(object):
 
 class Personality(object):
     def __init__(self, behavior_list=[]):
-        self.behaviors = behavior_list
+        self.behaviors = set(behavior_list)
     
     def __iter__(self):
         for behavior in self.behaviors:
@@ -94,6 +94,9 @@ class Entity(Paintable, Updateable):
 
     def getPosition(self):
         return self.boundingBox.center
+    
+    def getStride(self):
+        return round(self.getDimensions()[0] / 2.)
         
     def isCarryingEntity(self, type = None):
         if type:

@@ -15,7 +15,7 @@ def apply():
                                     chanceOfAction=0.75,
                                     senseDistance=100,
                                     senseFamily=False,
-                                    toApproach=[Queen]
+                                    toApproach=set([Queen])
                                 ),
                                 
                                 Mutate(
@@ -40,7 +40,7 @@ def apply():
                                 Gather(
                                     chanceOfAction=0.50,
                                     senseDistance=100,
-                                    toGather=[Food]
+                                    toGather=set([Food])
                                 )
                             ])
         
@@ -62,7 +62,7 @@ def apply():
                                   chanceOfAction=0.75,
                                   senseDistance=200,
                                   senseFamily=False,
-                                  toApproach=[Drone],
+                                  toApproach=set([Drone]),
                                 ),
                                 
                                 Mate(
@@ -76,7 +76,7 @@ def apply():
                                 
                                 Absorb(
                                   chanceOfAction=1.0,
-                                  toAbsorb=[Queen],
+                                  toAbsorb=set([Queen]),
                                 ),
                                 
                                 StartNewFamily(
