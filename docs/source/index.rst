@@ -16,7 +16,7 @@ Quick Links
 Requirements
 ============
 
-`pygame <http://www.pygame.org/>`_ (tested with 1.8.1)
+`pygame <http://www.pygame.org/>`_ (tested with 1.9.1)
 
 Installation
 ============
