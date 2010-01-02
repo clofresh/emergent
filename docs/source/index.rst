@@ -10,7 +10,7 @@ Emergent is my humble attempt at creating emergent behavior
 Quick Links
 ===========
 
-* `code repository <http://www.bitbucket.org/clofresh/emergent/>`_
+* `code repository <http://github.com/clofresh/emergent>`_
 * `API documentation <api/index.html>`_
 
 Requirements
